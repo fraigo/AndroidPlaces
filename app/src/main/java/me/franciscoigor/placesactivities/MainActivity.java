@@ -115,14 +115,19 @@ public class MainActivity extends AppCompatActivity {
             placeResult.addOnCompleteListener(new OnCompleteListener<PlaceLikelihoodBufferResponse>() {
                 @Override
                 public void onComplete(@NonNull Task<PlaceLikelihoodBufferResponse> task) {
-                    PlaceLikelihoodBufferResponse likelyPlaces = task.getResult();
-                    for (PlaceLikelihood placeLikelihood : likelyPlaces) {
-                        message.setText(String.format("Place '%s' has likelihood: %g",
-                                placeLikelihood.getPlace().getName(),
-                                placeLikelihood.getLikelihood()));
-                        System.out.println("PLACE: "+placeLikelihood.getPlace().getName());
+                    if (task.isSuccessful()) {
+                        PlaceLikelihoodBufferResponse likelyPlaces = task.getResult();
+                        for (PlaceLikelihood placeLikelihood : likelyPlaces) {
+                            message.setText(String.format("Place '%s' has likelihood: %g",
+                                    placeLikelihood.getPlace().getName(),
+                                    placeLikelihood.getLikelihood()));
+                            System.out.println("PLACE: " + placeLikelihood.getPlace().getName());
+                        }
+                        likelyPlaces.release();
+                    }else{
+                        System.out.println("PLACES NOT DETECTED");
+                        task.getException().printStackTrace();
                     }
-                    likelyPlaces.release();
                 }
             });
         }catch(Exception ex){

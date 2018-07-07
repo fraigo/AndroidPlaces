@@ -1,33 +1,13 @@
 package me.franciscoigor.placesactivities;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
 import android.location.Location;
-import android.os.Looper;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.places.GeoDataClient;
 import com.google.android.gms.location.places.Place;
-import com.google.android.gms.location.places.PlaceBufferResponse;
-import com.google.android.gms.location.places.PlaceDetectionClient;
-import com.google.android.gms.location.places.PlaceLikelihood;
-import com.google.android.gms.location.places.PlaceLikelihoodBufferResponse;
-import com.google.android.gms.location.places.Places;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-
-import java.util.Arrays;
-import java.util.Iterator;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -40,13 +20,35 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        final Button getLocation = findViewById(R.id.get_location);
+        getLocation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (getLocation.getText().toString().equals("Start Location")){
+                    api.startLocationLooper();
+                    getLocation.setText("Stop Location");
+                }else{
+                    api.stopLocationLooper();
+                    getLocation.setText("Start Location");
+                }
+
+            }
+        });
+
+        final Button getPlace = findViewById(R.id.get_place);
+        getPlace.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                api.getCurrentPlace();
+            }
+        });
+
         api = new GoogleMapApi(this) {
             @Override
             public void onPlaceFound(Place place, float likeliHood) {
                 if (likeliHood>0.1){
                     message("PLACE FOUND "+place.getName()+ "(" + Math.round(likeliHood*100) + "%)");
                 }
-
             }
 
             @Override
@@ -58,16 +60,17 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onLocationFound(Location location) {
                 message("LOCATION FOUND: " + api.formatLocation(location)) ;
-                api.getPlace();
             }
 
             @Override
             public void onCheckedPermissions() {
-                api.getLocation();
-
+                getLocation.setEnabled(true);
+                getPlace.setEnabled(true);
             }
         };
         api.checkPermissions();
+
+
 
     }
 

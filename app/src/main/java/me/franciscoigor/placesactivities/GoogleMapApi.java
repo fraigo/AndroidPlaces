@@ -26,6 +26,8 @@ public abstract class GoogleMapApi {
 
     public static final int REQUEST_LOCATION_PERMISSION = 1001;
     private Activity activity;
+    FusedLocationProviderClient locationProvider;
+    LocationCallback locationCallback;
 
     public GoogleMapApi(Activity activity){
         this.activity = activity;
@@ -61,37 +63,44 @@ public abstract class GoogleMapApi {
         }
     }
 
-    public void getLocation(){
-        System.out.println("GET LOCATION");
+    public void startLocationLooper(){
+        if (locationProvider == null) {
+            System.out.println("GET LOCATION");
 
-        FusedLocationProviderClient flpClient = LocationServices.getFusedLocationProviderClient(activity);
+            locationProvider = LocationServices.getFusedLocationProviderClient(activity);
 
-        LocationRequest locationRequest= LocationRequest.create();
-        locationRequest.setInterval(5000);
-        locationRequest.setFastestInterval(5000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+            LocationRequest locationRequest = LocationRequest.create();
+            locationRequest.setInterval(5000);
+            locationRequest.setFastestInterval(5000);
+            locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
-        LocationCallback callback=new LocationCallback(){
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                super.onLocationResult(locationResult);
-                for (final Location location : locationResult.getLocations()) {
-                    onLocationFound(location);
+            locationCallback = new LocationCallback() {
+                @Override
+                public void onLocationResult(LocationResult locationResult) {
+                    super.onLocationResult(locationResult);
+                    for (final Location location : locationResult.getLocations()) {
+                        onLocationFound(location);
+                    }
                 }
-
+            };
+            try {
+                locationProvider.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
+            } catch (SecurityException ex) {
+                System.out.println("Location error");
+                ex.printStackTrace();
             }
-        };
-        try {
-            flpClient.requestLocationUpdates(locationRequest, callback, Looper.myLooper());
-        } catch(SecurityException ex){
-            System.out.println("Location error");
-            ex.printStackTrace();
         }
+    }
 
+    public void stopLocationLooper(){
+        if (locationProvider!=null){
+            locationProvider.removeLocationUpdates(locationCallback);
+            locationProvider = null;
+        }
     }
 
 
-    public void getPlace() {
+    public void getCurrentPlace() {
 
 
         System.out.println("GET PLACE");

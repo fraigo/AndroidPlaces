@@ -110,27 +110,31 @@ public class MainActivity extends AppCompatActivity {
         final TextView message= findViewById(R.id.text_message);
 
         PlaceDetectionClient client = Places.getPlaceDetectionClient(this);
-        Task<PlaceLikelihoodBufferResponse> placeResult = client.getCurrentPlace(null);
-        placeResult.addOnCompleteListener(new OnCompleteListener<PlaceLikelihoodBufferResponse>() {
-            @Override
-            public void onComplete(@NonNull Task<PlaceLikelihoodBufferResponse> task) {
-                PlaceLikelihoodBufferResponse likelyPlaces = task.getResult();
-                for (PlaceLikelihood placeLikelihood : likelyPlaces) {
-                    message.setText(String.format("Place '%s' has likelihood: %g",
-                            placeLikelihood.getPlace().getName(),
-                            placeLikelihood.getLikelihood()));
+        try {
+            Task<PlaceLikelihoodBufferResponse> placeResult = client.getCurrentPlace(null);
+            placeResult.addOnCompleteListener(new OnCompleteListener<PlaceLikelihoodBufferResponse>() {
+                @Override
+                public void onComplete(@NonNull Task<PlaceLikelihoodBufferResponse> task) {
+                    PlaceLikelihoodBufferResponse likelyPlaces = task.getResult();
+                    for (PlaceLikelihood placeLikelihood : likelyPlaces) {
+                        message.setText(String.format("Place '%s' has likelihood: %g",
+                                placeLikelihood.getPlace().getName(),
+                                placeLikelihood.getLikelihood()));
+                        System.out.println("PLACE: "+placeLikelihood.getPlace().getName());
+                    }
+                    likelyPlaces.release();
                 }
-            }
-        });
+            });
+        }catch(Exception ex){
+            System.out.println("ERROR PLACE");
+            ex.printStackTrace();
+        }
+
 
 
 
     }
 
-    private void setPlace(){
-
-
-    }
 
 }
 

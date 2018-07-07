@@ -33,112 +33,58 @@ public class MainActivity extends AppCompatActivity {
 
     public final static int REQUEST_LOCATION_PERMISSION = 1001;
     float currentLikelihoodValue = -1;
+    GoogleMapApi api;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        if (ActivityCompat.checkSelfPermission(this,
-                android.Manifest.permission.ACCESS_FINE_LOCATION) !=
-                PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new
-                            String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    REQUEST_LOCATION_PERMISSION);
-            System.out.println("REQUESTING PERMISSIONS");
-        } else {
-            getLocation();
-        }
+        api = new GoogleMapApi(this) {
+            @Override
+            public void onPlaceFound(Place place, float likeliHood) {
+                if (likeliHood>0.1){
+                    message("PLACE FOUND "+place.getName()+ "(" + Math.round(likeliHood*100) + "%)");
+                }
+
+            }
+
+            @Override
+            public void onPlaceError(Exception ex) {
+                message("ERROR PLACE");
+                ex.printStackTrace();
+            }
+
+            @Override
+            public void onLocationFound(Location location) {
+                message("LOCATION FOUND: " + api.formatLocation(location)) ;
+                api.getPlace();
+            }
+
+            @Override
+            public void onCheckedPermissions() {
+                api.getLocation();
+
+            }
+        };
+        api.checkPermissions();
 
     }
 
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_LOCATION_PERMISSION: {
-                // Check if the permission is granted.
-                System.out.println("RESULTS: "+grantResults[0]);
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Permission was granted.
-                    System.out.println("PERMISSION OK");
-                    getLocation();
-
-
-                } else {
-                    // Permission was denied...
-                    System.out.println("PERMISSION ERROR");
-                }
-
-            }
-        }
+        api.onRequestedPermissions(requestCode,permissions,grantResults);
     }
 
-    private void getLocation(){
-        System.out.println("GET LOCATION");
 
-        FusedLocationProviderClient flpClient = LocationServices.getFusedLocationProviderClient(this);
 
-        LocationRequest locationRequest= LocationRequest.create();
-        locationRequest.setInterval(5000);
-        locationRequest.setFastestInterval(5000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-        LocationCallback callback=new LocationCallback(){
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                super.onLocationResult(locationResult);
-                for (final Location location : locationResult.getLocations()) {
-                    System.out.println("Location:"+ location);
-                    getPlace();
-                }
-
-            }
-        };
-        try {
-            flpClient.requestLocationUpdates(locationRequest, callback, Looper.myLooper());
-        } catch(SecurityException ex){
-            System.out.println("Location error");
-            ex.printStackTrace();
-        }
-
+    private void message(String message){
+        TextView txtMessage= findViewById(R.id.text_message);
+        txtMessage.setText(txtMessage.getText()+"\n"+message);
+        System.out.println(message);
     }
 
-    private void getPlace() {
 
-
-        System.out.println("GET PLACE");
-        final TextView message= findViewById(R.id.text_message);
-
-        PlaceDetectionClient client = Places.getPlaceDetectionClient(this);
-        try {
-            Task<PlaceLikelihoodBufferResponse> placeResult = client.getCurrentPlace(null);
-            placeResult.addOnCompleteListener(new OnCompleteListener<PlaceLikelihoodBufferResponse>() {
-                @Override
-                public void onComplete(@NonNull Task<PlaceLikelihoodBufferResponse> task) {
-                    if (task.isSuccessful()) {
-                        PlaceLikelihoodBufferResponse likelyPlaces = task.getResult();
-                        for (PlaceLikelihood placeLikelihood : likelyPlaces) {
-                            message.setText(String.format("Place '%s' has likelihood: %g",
-                                    placeLikelihood.getPlace().getName(),
-                                    placeLikelihood.getLikelihood()));
-                            System.out.println("PLACE: " + placeLikelihood.getPlace().getName());
-                        }
-                        likelyPlaces.release();
-                    }else{
-                        System.out.println("PLACES NOT DETECTED");
-                        task.getException().printStackTrace();
-                    }
-                }
-            });
-        }catch(Exception ex){
-            System.out.println("ERROR PLACE");
-            ex.printStackTrace();
-        }
-
-
-
-
-    }
 
 
 }
